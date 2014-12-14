@@ -1,50 +1,121 @@
 (function (document, window, undefined) {
   'use strict';
 
+  /**
+   * Is the user using a modern browser?
+   * @type {Boolean}
+   */
   var available = window.File && window.FileReader && window.FileList && window.Blob;
+
+  /**
+   * Is the user using a mobile browser?
+   * @type {Boolean}
+   */
   var mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  var message = dq('.message');
-  var dropField = dq('.drop-me');
-  var uploadList = dq('.upload-list');
-  var uploadCustom = dq('.upload-custom');
-  var uploadField = dq('.custom-upload');
-  var uploadButton = dq('.upload-button');
-  var uploadTempName = dq('.custom-upload-name');
-  var fileHistory = [];
+  /**
+   * Document object
+   * @type {Object}
+   */
+  var d = document;
 
-  var data;
+  /**
+   * All the elements we'll use
+   * @type {Array}
+   */
+  var elements = [
+    'message', 'drop-me', 'upload-list','upload-custom',
+    'custom-upload', 'upload-button', 'custom-upload-name'
+  ];
 
-  uploadField.addEventListener('change', function () {
-    var file = uploadField.files[0];
-    uploadTempName.innerHTML = parseImageName(file.name);
+  /**
+   * Object holding all the elements (camelCased)
+   * @type {Object}
+   */
+  var el = {};
+
+  // Loop over all the element classes
+  elements.forEach(function (name, index) {
+    // Match any - in the string
+    var re = name.match(/\-([a-z])/g);
+    // Only if we found previous matches
+    if (re && re.length > 0) {
+      // Loop over them (could be multiple)
+      for (var i = 0; i < re.length; i++) {
+        // Replace ab-cd with abCd
+        name = name.replace(
+            re[i], // The original match
+            re[i].slice(-1).toUpperCase()); // The last char, to uppercase
+      }
+    }
+    // Assign the element to el.[camelCase], get it from the document or assign an empty string
+    el[name] = d.querySelector('.' + elements[index] || '');
   });
 
-  uploadCustom.addEventListener('click', function () {
-    var file = uploadField.files[0];
+  /**
+   * Uploaded / added files (so we don't upload the same thing multiple times)
+   * @type {Array}
+   */
+  var fileHistory = [];
+
+
+  /**
+   * Event listener for the manual upload, when it changes grab
+   * the first file, call parseImageName (so it won't be too long) and
+   * set the value to the new filename
+   */
+  el.customUpload.addEventListener('change', function () {
+    var file = el.customUpload.files[0];
+    el.customTempName.innerHTML = parseImageName(file.name);
+  });
+
+  /**
+   * Event listener for the manual upload button, when the user clicks it
+   * call uploadFile (to upload the file) and reset the value to no file selected
+   * when it's done
+   * @TODO: Use a promise
+   */
+  el.customTempName.addEventListener('click', function () {
+    var file = el.customUpload.files[0];
     uploadFile(file);
-    uploadTempName.innerHTML = 'No file selected';
+    el.customTempName.innerHTML = 'No file selected';
   }, false);
 
-  if (available) {
+  // Enable drag / drop only on modern and non-mobile browsers
+  if (available && !mobile) {
+
+    /**
+     * Initialise the upload ready status to false
+     * @type {Boolean}
+     */
     var uploadReady = false;
 
-    if (!mobile) {
       message.innerHTML = 'Drop Here';
 
-      dropField.addEventListener('dragover', function (ev) {
+    /**
+     * Event listener for when the user drags the file in the browser, prevent the default
+     * open with Chrome action, and make the background green
+     */
+      el.customUpload.addEventListener('dragover', function (ev) {
         ev.preventDefault();
 
         this.style.background = '#48d278';
         message.innerHTML = 'Upload!';
       }, false);
 
-      dropField.addEventListener('dragleave', function () {
+    /**
+     * Event listener for when the user stops dragging a file over the browser, remove the
+     * background and reset the text
+     */
+      el.customUpload.addEventListener('dragleave', function () {
         this.style.background = '';
         message.innerHTML = 'Drop Here';
       }, false);
 
-      dropField.addEventListener('drop', function (ev) {
+    /**
+     * @TODO: start from here
+     */
+      el.customUpload.addEventListener('drop', function (ev) {
         ev.preventDefault();
 
         this.style.background = '';
@@ -55,14 +126,9 @@
         }
 
       }, false);
-    }
 
   } else {
     document.getElementById('message').innerHTML = 'Your browser is not supported';
-  }
-
-  function dq (elem) {
-    return document.querySelector(elem);
   }
 
   function bounceButton () {
@@ -138,9 +204,10 @@
     uploadItem.appendChild(uploadLink);
     uploadList.appendChild(uploadItem);
 
+    var data;
     if (uploadReady) {
-      var xhrRequest = new XMLHttpRequest(),
-        data = new FormData();
+      var xhrRequest = new XMLHttpRequest();
+      data = new FormData();
 
       xhrRequest.onload = function () {
         if (this.status === 200) {

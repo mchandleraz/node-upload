@@ -19,7 +19,7 @@ server.listen(3030);
 
 // View Engine
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'hjs'); // hogan.js
+app.set('view engine', 'handlebars');
 
 // Static
 app.use(favicon(__dirname + '/public/dist/favicon.ico'));
