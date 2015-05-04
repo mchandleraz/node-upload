@@ -19,7 +19,7 @@ server.listen(3030);
 
 // View Engine
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'handlebars');
+app.set('view engine', 'hjs');
 
 // Static
 app.use(favicon(__dirname + '/public/dist/favicon.ico'));
@@ -27,7 +27,7 @@ app.use(multer());
 app.use(express.static(path.join(__dirname, 'public/dist')));
 
 // Routes
-var routes = require('./routes/routes'); 
+var routes = require('./routes/routes');
 app.use(routes);
 
 // development error handler will print stacktrace
